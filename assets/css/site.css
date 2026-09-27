@@ -1,0 +1,105 @@
+/* ===========================================================================
+ * AI 工具导航 —— 站点样式
+ * ---------------------------------------------------------------------------
+ * 这里只放 Tailwind 表达不了、或写成工具类会失去可读性的部分：
+ * 胶囊、卡片、占位卡的组件级样式，焦点反馈，toast，滚动条。
+ * 版式（间距、字号、栅格）一律走 Tailwind 工具类，写在 index.html 里。
+ *
+ * 色板在两处各写一份，**改一处必须同时改另一处**：
+ *   1. index.html <head> 里的 tailwind.config —— Tailwind Play CDN 读的是它
+ *   2. 本文件顶部的 :root 变量 —— 手写 CSS（下面那些规则）读的是它
+ * 之所以必须写两遍：Play CDN 在运行时生成工具类，读不到 CSS 变量；
+ * 反过来手写 CSS 也不该散落魔法色值。两组值的对应关系见下方注释。
+ * =========================================================================== */
+
+:root {
+  /* —— 与 index.html 的 tailwind.config 一一对应 —— */
+  --cream:  #F7F4EE;   /* cream  页面背景 */
+  --panel:  #EFE9DD;   /* panel  顶部栏底色 */
+  --paper:  #FAF8F3;   /* paper  次级背景 */
+  --card:   #FFFFFF;   /* card   卡片 */
+  --ink:    #111111;   /* ink    主文字 */
+  --muted:  #6B7280;   /* muted  次要文字 */
+  --line:   #E8E3DA;   /* line   边框 */
+
+  /* —— 只在 CSS 里用到的深浅档：hover 边框、虚线边框、滚动条。
+        它们不参与版式，没有对应的 Tailwind 色名，所以不写进 tailwind.config —— */
+  --line-hover: #D6CFC2;
+  --line-dashed: #E2DCD1;
+
+  /* —— 圆角与阴影 —— */
+  --radius-card: 16px;
+  --shadow-soft: 0 1px 2px rgba(17, 17, 17, .04);
+  --shadow-lift: 0 6px 20px rgba(17, 17, 17, .06);
+}
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  background: var(--cream);
+  color: var(--ink);
+  font-feature-settings: "kern" 1;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ——— 分类标签：胶囊。选中黑底白字，未选中白底灰边 ——— */
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: .25rem;
+  padding: .3rem .72rem;
+  border: 1px solid var(--line);
+  border-radius: 9999px;
+  background: var(--card);
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.4;
+  white-space: nowrap;
+  transition: background-color .18s ease, color .18s ease, border-color .18s ease;
+}
+.pill-active { background: var(--ink); border-color: var(--ink); color: var(--card); }
+button.pill { cursor: pointer; }
+button.pill:hover { border-color: var(--ink); color: var(--ink); }
+button.pill.pill-active:hover { color: var(--card); }
+
+/* ——— 工具卡片：hover 只做轻微上浮 + 边框加深 ——— */
+.tool-card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-soft);
+  transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
+}
+.tool-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--line-hover);
+  box-shadow: var(--shadow-lift);
+}
+
+/* ——— 占位卡：虚线 + 序号，用来撑出网格结构 ———
+   注意：它只在「成功取到数据、但工具不足」时出现；
+   取不到数据时不许渲染它（会误报成「本站工具不足」）。见 Readme 第十二节。 */
+.slot-card {
+  border: 1px dashed var(--line-dashed);
+  border-radius: var(--radius-card);
+  background: rgba(255, 255, 255, .45);
+}
+
+/* 搜索框获得焦点时的克制反馈 */
+#searchInput:focus { border-color: var(--ink); }
+
+/* 轻提示 toast */
+#toast {
+  opacity: 0;
+  transform: translate(-50%, 8px);
+  transition: opacity .22s ease, transform .22s ease;
+}
+#toast.is-visible { opacity: 1; transform: translate(-50%, 0); }
+
+/* 滚动条：细、低对比 */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-thumb {
+  background: var(--line-dashed);
+  border-radius: 9999px;
+  border: 3px solid var(--cream);
+}

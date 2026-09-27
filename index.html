@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<!-- 只做桌面端：本站没有移动端适配计划，不写任何响应式断点。
+     这一行保留是有意的 —— 它决定的是「手机打开会怎样」（缩放显示整个桌面页），
+     和「要不要写移动端样式」是两件事，等以后有结论再动。 -->
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="color-scheme" content="light" />
+<title>AI 工具导航 · 收录好用的 AI 工具</title>
+<meta name="description" content="一个克制的 AI 工具导航站：收录经过筛选的 AI 工具，提供清晰的分类与直达入口。" />
+
+<!-- 数据服务地址。留空即可 —— 默认走「问本服务的 /api/config」，端口由服务端环境变量决定，
+     所以换端口不需要动这里。只有把数据服务搬到别处（另一个域名/端口）时才需要填，
+     填了就优先用它。见 assets/js/api.js 的 resolveDataOrigin() -->
+<meta name="data-origin" content="" />
+<!-- 内联 favicon：避免浏览器去请求 /favicon.ico 而被 404 规则拦下 -->
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23111111'/%3E%3Ctext x='16' y='22' font-family='Inter,sans-serif' font-size='15' font-weight='700' fill='%23F7F4EE' text-anchor='middle'%3EAI%3C/text%3E%3C/svg%3E" />
+
+<!-- 字体：Inter（拉丁）+ 思源黑体 / Noto Sans SC（中文），失败时回落到系统无衬线 -->
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet" />
+
+<!-- Tailwind CDN（规范要求：不引入构建步骤，CDN + 内联 config）。
+     ⚠️ 这是**整个页面唯一一个不经过 api.js 的出站请求** —— 因为样式引擎没法走数据通道。
+     它是本页最脆的一环：这个域名挂了/慢了/停止服务，页面会变成一篇没有排版的纯文字，
+     而代码里原本没有任何提示，看起来就像「网站坏了」却看不出原因。
+     所以下面立刻补了两件事：**配置不再无条件写入**（写不进去会抛 ReferenceError，
+     盖掉控制台里真正有用的报错）、**失败时给一句能看懂的话**。
+     要彻底不依赖外网，就把产物本地化（代价是多一个构建步骤）—— 见 docs/principles.md。 -->
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  /* Tailwind 设计令牌：米白色板 + 瑞士国际主义排版的最小集合。
+     色板在 assets/css/site.css 顶部的 :root 里还写着一份（手写 CSS 读的是那份），
+     改这里必须同时改那边 —— Play CDN 在运行时生成工具类，读不到 CSS 变量。 */
+
+  // 同步的 <script src> 会一直阻塞到这里「加载完」或「失败」，所以走到这一行时
+  // 结果已经确定了 —— 用 tailwind 在不在，就能判断刚才那一趟是成是败。
+  if (!window.tailwind) {
+    // —— 样式引擎没下来 ——
+    // 两件事必须做：① 不写 tailwind.config（写了就是 ReferenceError，一条没用的报错
+    // 盖住控制台里真正有用的信息）；② 给一句能看懂的话，否则用户面对一篇没排版的
+    // 纯文字，既不知道是自己网不好还是站坏了。
+    window.addEventListener('DOMContentLoaded', () => {
+      const notice = document.createElement('div');
+      // 这段样式必须**内联**：工具类这时一个都不存在，用 class 写的提示会和页面
+      // 其余部分一起变成白底黑字，等于没说
+      notice.setAttribute('style',
+        'font:14px/1.6 system-ui,-apple-system,"Microsoft YaHei",sans-serif;' +
+        'background:#111;color:#F7F4EE;padding:12px 20px;');
+      notice.textContent = '样式资源未能从 cdn.tailwindcss.com 加载，本页显示为无样式版本。工具数据不受影响。';
+      document.body.prepend(notice);
+    });
+  } else {
+    // 写 window.tailwind 而不是裸的 tailwind：浏览器里两者等价（全局对象上的属性
+    // 就是全局变量），但显式写出来这行才是自洽的 —— 上面刚用 window.tailwind 判断过，
+    // 这里却换成另一个名字去写，读的人得知道「它们其实是同一个东西」才敢改。
+    window.tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            cream:  '#F7F4EE',   // 页面背景
+            panel:  '#EFE9DD',   // 顶部栏底色：比主体略深，用来和内容区区分
+            paper:  '#FAF8F3',   // 次级背景
+            card:   '#FFFFFF',   // 卡片
+            ink:    '#111111',   // 主文字
+            muted:  '#6B7280',   // 次要文字
+            line:   '#E8E3DA'    // 边框
+          },
+          fontFamily: {
+            sans: ['Inter', '"Noto Sans SC"', '"Source Han Sans SC"', '"PingFang SC"', '"Microsoft YaHei"', 'system-ui', '-apple-system', 'sans-serif']
+          },
+          boxShadow: {
+            soft: '0 1px 2px rgba(17,17,17,0.04)',
+            lift: '0 6px 20px rgba(17,17,17,0.06)'
+          }
+        }
+      }
+    };
+  }
+</script>
+
+<!-- 站点样式：组件级样式与设计令牌，见文件头注释 -->
+<link rel="stylesheet" href="/assets/css/site.css" />
+</head>
+
+<body class="font-sans antialiased min-h-screen flex flex-col">
+
+<!-- ============================ 顶部栏 ============================ -->
+<header class="sticky top-0 z-40 bg-panel">
+  <div class="max-w-[1180px] mx-auto px-10">
+    <div class="flex flex-row items-center justify-between gap-3 py-4">
+
+      <!-- 左：品牌 + 导航 -->
+      <div class="flex items-center gap-6">
+        <span class="text-[13px] font-semibold tracking-[0.18em] uppercase">AI 工具</span>
+        <!-- 真链接：路径即页面（/ 与 /tools），支持中键 / 新标签页打开 -->
+        <nav id="nav" class="flex items-center gap-1" aria-label="主导航">
+          <a href="/" data-view="home"
+             class="nav-link px-3 py-1.5 rounded-full text-[14px] text-muted transition-colors select-none">首页</a>
+          <a href="/tools" data-view="tools"
+             class="nav-link px-3 py-1.5 rounded-full text-[14px] text-muted transition-colors select-none">AI工具页</a>
+        </nav>
+      </div>
+
+      <!-- 右：搜索框。打字不触发；回车或点放大镜提交，空输入提交 → /tools -->
+      <div class="relative w-[300px]">
+        <button type="button" id="searchBtn" aria-label="搜索"
+                class="absolute left-0 top-0 h-10 w-10 flex items-center justify-center rounded-full
+                       text-muted hover:text-ink transition-colors">
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
+            <circle cx="11" cy="11" r="7"></circle>
+            <path d="m20 20-3.6-3.6"></path>
+          </svg>
+        </button>
+        <input id="searchInput" type="search" autocomplete="off" enterkeyhint="search" aria-label="搜索 AI 工具"
+               placeholder="搜索 AI 工具或关键词..."
+               class="w-full h-10 pl-10 pr-4 rounded-full bg-card border border-line text-[14px] text-ink
+                      placeholder:text-muted outline-none transition-colors" />
+      </div>
+
+    </div>
+  </div>
+  <!-- 顶部栏下方的黑色描线：与略深的底色一起把顶栏和内容区切开 -->
+  <div class="border-b border-ink"></div>
+</header>
+
+<!-- ============================ 主体 ============================ -->
+<main class="flex-1">
+  <div class="max-w-[1180px] mx-auto px-10">
+
+    <!-- ———————————— 视图一：首页 ———————————— -->
+    <section id="view-home">
+
+      <!-- Hero -->
+      <div class="pt-28 pb-24">
+        <p class="text-[11px] font-medium uppercase tracking-[0.24em] text-muted">AI Tools Directory</p>
+        <h1 class="mt-6 text-[76px] leading-[1.03] font-bold tracking-[-0.02em] max-w-[16ch]">
+          把散落的 AI 工具，<br />收进一个干净的目录。
+        </h1>
+        <p class="mt-7 max-w-[52ch] text-[16px] leading-[1.85] text-muted">
+          本站只做一件事：把值得用的 AI 工具挑出来，给出清楚的分类和直达入口。
+          不用在搜索结果里反复翻页，找到、点开、开始用。
+        </p>
+
+        <!-- 收录口径：长期成立的一句，不随收录量变化（见 Readme 第十二节） -->
+        <div class="mt-8 flex items-center gap-3">
+          <span class="h-px w-8 shrink-0 bg-ink" aria-hidden="true"></span>
+          <p class="text-[14px] text-ink">只收录开源项目</p>
+        </div>
+      </div>
+
+      <div class="border-t border-line"></div>
+
+      <!-- 热门工具推荐 -->
+      <div class="py-20">
+        <div class="flex flex-wrap items-baseline gap-x-4 gap-y-2 mb-10">
+          <span class="text-[11px] font-medium uppercase tracking-[0.24em] text-muted">Hot</span>
+          <h2 class="text-[30px] font-bold tracking-[-0.01em]">热门工具推荐</h2>
+          <span id="hotCount" class="text-[13px] text-muted"></span>
+        </div>
+
+        <!-- 网格：桌面 3 列 × 2 行，最多 6 个卡片位；由 views.js 的 renderHotTools() 填充 -->
+        <div id="hotGrid" class="grid grid-cols-3 gap-5"></div>
+      </div>
+
+    </section>
+
+    <!-- ———————————— 视图二：AI 工具页 ———————————— -->
+    <section id="view-tools" class="hidden">
+
+      <div class="pt-20 pb-8">
+        <p class="text-[11px] font-medium uppercase tracking-[0.24em] text-muted">All Tools</p>
+        <div class="mt-5 flex flex-wrap items-end justify-between gap-3">
+          <h1 class="text-[46px] font-bold tracking-[-0.02em]">AI 工具页</h1>
+          <span id="toolCount" class="text-[13px] text-muted"></span>
+        </div>
+        <p class="mt-5 max-w-[56ch] text-[15px] leading-[1.85] text-muted">
+          全部已收录的工具，可按分类筛选。
+        </p>
+      </div>
+
+      <div class="border-t border-line"></div>
+
+      <!-- 分类标签筛选条：分类由数据派生，不硬编码 -->
+      <div id="tagFilter" class="flex flex-wrap items-center gap-2 py-6"></div>
+
+      <!-- 卡片分批渲染：这里只放已经加载出来的那几批，滚到底再补（见 pager.js） -->
+      <div id="toolGrid" class="grid grid-cols-3 gap-5"></div>
+
+      <!-- 分批加载的状态行：还有没加载的就说在加载，全部加载完就说到此为止。
+           它同时承担本页的底部留白，所以 0 条结果时留空而不隐藏（隐藏会让页面贴底） -->
+      <p id="toolMore" class="pt-12 pb-20 text-center text-[13px] text-muted"></p>
+    </section>
+
+    <!-- ———————————— 视图三：搜索结果页 ———————————— -->
+    <section id="view-search" class="hidden">
+
+      <div class="pt-20 pb-8">
+        <p class="text-[11px] font-medium uppercase tracking-[0.24em] text-muted">Search</p>
+        <div class="mt-5 flex flex-wrap items-end justify-between gap-3">
+          <h1 class="text-[46px] font-bold tracking-[-0.02em]">搜索结果</h1>
+          <!-- 命中数量：与工具页「共 n 个工具」同一位置（标题行右侧） -->
+          <span id="searchCount" class="text-[13px] text-muted"></span>
+        </div>
+      </div>
+
+      <div class="border-t border-line"></div>
+
+      <!-- 分类标签：与工具页同一份数据、同一套选中态，可与搜索词叠加 -->
+      <div id="searchTagFilter" class="flex flex-wrap items-center gap-2 py-6"></div>
+
+      <!-- 只展出筛选后的卡片；命中 0 个时这里是空的，不给空状态块 -->
+      <div id="searchGrid" class="grid grid-cols-3 gap-5"></div>
+
+      <!-- 分批加载的状态行，与工具页同款（底部留白也由它承担）。
+           搜索页同样要分批：分页之下不可能一次拉全量，而且失败态得有地方挂 -->
+      <p id="searchMore" class="pt-12 pb-20 text-center text-[13px] text-muted"></p>
+    </section>
+
+  </div>
+</main>
+
+<!-- ============================ 页脚 ============================ -->
+<footer class="border-t border-line">
+  <div class="max-w-[1180px] mx-auto px-10 py-8 flex flex-row items-center justify-between gap-2">
+    <p class="text-[13px] text-muted">AI 工具导航</p>
+    <!-- 访问地址从服务端 /api/config 读取，页面内不写死；直接以 file:// 打开时自动隐藏 -->
+    <p id="serverAddr" class="hidden text-[13px] text-muted font-mono"></p>
+  </div>
+</footer>
+
+<!-- 轻提示 -->
+<div id="toast" role="status" aria-live="polite"
+     class="fixed left-1/2 bottom-8 z-50 px-4 py-2.5 rounded-full bg-ink text-white text-[13px] pointer-events-none whitespace-nowrap"></div>
+
+<!-- 唯一入口。src 必须是绝对路径：写成相对路径时，/tools 下会被解析成 /tools/assets/... 而 404。
+     模块内部的 import 走相对当前模块自身的地址，所以那三处相对路径都是对的。 -->
+<script type="module" src="/assets/js/main.js"></script>
+
+</body>
+</html>

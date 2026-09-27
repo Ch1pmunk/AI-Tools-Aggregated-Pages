@@ -1,0 +1,16 @@
+{
+  "name": "ai-tools-directory",
+  "version": "0.2.0",
+  "private": true,
+  "description": "中文 AI 工具导航站：静态页 + 数据服务 + 可替换的数据源",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "start": "node scripts/start.js",
+    "start:static": "node server.js",
+    "start:data": "node data-service/server.js"
+  },
+  "comment": "本项目零依赖：不列 dependencies。MySQL 数据源是可选项，需要时自行 npm i mysql2（见 docs/adapters.md）。",
+  "comment:no-type-field": "这里**故意不写 `type` 字段**。写了 `commonjs`，Node 会把 assets/js/*.js 也按 CommonJS 解析（它们其实是浏览器的 ES module），于是「用 Node 直接 import 一个前端模块来验一段逻辑」这条路会直接报语法错；写了 `module` 则反过来，服务端那堆 require 全崩。不写的话 Node 靠自动探测，代价只是 ad-hoc 跑前端模块时打一句 MODULE_TYPELESS_PACKAGE_JSON 警告 —— 一句警告换一条可用的验证路径，划算。详见 assets/README.md。"
+}

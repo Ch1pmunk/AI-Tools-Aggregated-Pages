@@ -1,0 +1,11 @@
+{
+  "id": "ppt",
+  "name": "PPT生成",
+  "description": "根据主题快速生成演示文稿，适合汇报、课件和提案。",
+  "tags": ["演示文稿", "办公"],
+  "icon": "📊",
+  "url": "/tools/ppt/",
+  "enabled": true,
+  "likes": 0,
+  "order": 1000
+}
